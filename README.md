@@ -1,5 +1,4 @@
-# Predicting Restaurant Health Violations Using Yelp Reviews: 
-# A Machine Learning Approach
+# Predicting Restaurant Health Violations Using Yelp Reviews: A Machine Learning Approach
 
 Harlan Hutton, Surabhi Ranjan, Rajashekar Vasantha, Ted Yap
 Center for Data Science, New York University
