@@ -1,4 +1,4 @@
-Predicting Restaurant Health Violations Using Yelp Reviews: 
+### Predicting Restaurant Health Violations Using Yelp Reviews: 
 A Machine Learning Approach
 
 Harlan Hutton, Surabhi Ranjan, Rajashekar Vasantha, Ted Yap
