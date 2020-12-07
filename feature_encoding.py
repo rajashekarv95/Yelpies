@@ -16,6 +16,8 @@ from sklearn.model_selection import
 from sklearn.metrics import f1_score, precision_score, recall_score
 from datetime import datetime
 from xgboost import XGBClassifier
+from sklearn.decomposition import PCA
+
 
 # Helper functions for encoding 
 # Lebel encoding
@@ -86,5 +88,70 @@ df_reviews_token = df_reviews_sub['review_wo_stop']
 cols_to_encode = encoded_cols(df_reviews_ohe)
 encoded_data = one_hot(df_reviews_ohe, cols_to_encode)
 
+## Encode text data with n_gram = 2
+vectorizer2 = TfidfVectorizer(analyzer='word', ngram_range=(1, 2),stop_words='english',binary=True)
+
+X2_train = vectorizer2.fit_transform(df_reviews_token)
+X2_train = X2_train.todense()
+X2_train_pd = pd.DataFrame(X2_train)
+
+### concat X2_train to encoded_data
+
+encoded_data = pd.concat([encoded_data, X2_train_pd], axis = 1)
+
+## Split this entire dataset into train-test
+
+
+train, test = train_test_split(encoded_data, test_size=0.25)
+
+x_train = train.drop(columns='action')
+y_train = train['action']
+x_test = test.drop(columns='action')
+y_test = test['action']
+
+### Run different models and get AUC graph 
+
+def train_models(x_train, y_train, x_test, y_test, model_type):
+  if model_type == 'lr':
+    model = LogisticRegression(random_state=123).fit(x_train, y_train)
+  elif model_type == 'svm':
+    model = SVC(kernel="poly", probability=True, random_state=123).fit(x_train, y_train)
+  elif model_type == 'dt':
+    model = DecisionTreeClassifier(random_state=123, criterion='entropy').fit(x_train, y_train)
+  elif model_type == 'rf':
+    model = RandomForestClassifier(random_state=123).fit(x_train, y_train)
+  elif model_type == 'gb':
+    model = GradientBoostingClassifier(random_state=123).fit(x_train, y_train)
+  elif model_type == 'xgb':
+    model = XGBClassifier().fit(x_train, y_train)
+
+  model_probs = model.predict_proba(x_test)[:, 1]
+  model_pred = model.predict(x_test)
+  fpr, tpr, _ = roc_curve(y_test, model_probs)
+  auc = roc_auc_score(y_test, model_probs)
+  f1 = f1_score(y_test, model_pred)
+  precision = precision_score(y_test, model_pred)
+  recall = recall_score(y_test, model_pred)
+
+  return fpr, tpr, auc, f1, precision, recall
+
+models = ['lr', 'svm', 'dt', 'rf', 'gb', 'xgb']
+for model in models:
+  fpr, tpr, auc, f1, precision, recall = train_models(x_train, y_train, x_test, y_test, model)
+  plt.plot(fpr, tpr, label='{} auc - {}'.format(model, auc))
+  plt.xlabel('FPR')
+  plt.ylabel('TPR')
+  plt.legend()
+
+## Fails for all the above models 
+# Try PCA with dimensionality 10 
+
+pca = PCA(n_components=10, svd_solver='arpack')
+pca.fit(x_train)
+x_train_pca = pca.transform(x_train)
+x_test_pca = pca.transform(x_test)
+print(pca.explained_variance_ratio_)
+
+fpr, tpr, auc, f1, precision, recall = train_models(x_train_pca, y_train, x_test_pca, y_test, '')
 
 
